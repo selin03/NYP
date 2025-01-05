@@ -19,7 +19,7 @@ public:
     virtual void saldir(Karakter& hedef) = 0; // Soyut metot
 
     int getCan() const {
-        return max(can, 0); 
+        return max(can, 0);
     }
 
     string getIsim() const {
@@ -52,7 +52,6 @@ public:
         }
         hedef.azaltCan(hasar);
         cout << isim << ", " << hedef.getIsim() << "'e " << hasar << " hasar verdi!" << endl;
-
         if (hedef.getCan() <= 0) {
             cout << hedef.getIsim() << " yenildi!" << endl;
         }
@@ -96,7 +95,6 @@ public:
         }
         hedef.azaltCan(hasar);
         cout << isim << ", " << hedef.getIsim() << "'e " << hasar << " hasar verdi!" << endl;
-        
         if (hedef.getCan() <= 0) {
             cout << hedef.getIsim() << " yenildi!" << endl;
         }
@@ -123,3 +121,99 @@ public:
     }
 };
 
+// Oyun Sinifi
+class Oyun {
+private:
+    Oyuncu oyuncu;
+    vector<Karakter*> dusmanlar;
+
+public:
+    Oyun()
+        : oyuncu("Kahraman", 100) {
+        dusmanlar.push_back(new Ork("Ork", 70));
+        dusmanlar.push_back(new Goblin("Goblin", 40));
+    }
+
+    ~Oyun() {
+        for (auto dusman : dusmanlar) {
+            delete dusman;
+        }
+    }
+
+    void baslat() {
+        cout << "Oyun Basladi!" << endl;
+        while (oyuncu.getCan() > 0 && !dusmanlar.empty()) {
+            cout << "\n--- Yeni Tur ---" << endl;
+            cout << "Senin Canin: " << oyuncu.getCan() << endl;
+
+            for (size_t i = 0; i < dusmanlar.size(); ++i) {
+                cout << "Dusman " << i + 1 << ": " << dusmanlar[i]->getIsim()
+                    << ", Can: " << dusmanlar[i]->getCan() << endl;
+            }
+
+            int secim, hedefIndex;
+            cout << "Secim Yap: Saldir (1), Ozel Saldiri (2), Heal (3): ";
+            cin >> secim;
+
+            if (secim == 3) {
+                oyuncu.heal();
+                continue;
+            }
+
+            cout << "Hangi dusmana saldiracaksin? (1-" << dusmanlar.size() << "): ";
+            cin >> hedefIndex;
+
+            if (hedefIndex < 1 || hedefIndex > static_cast<int>(dusmanlar.size())) {
+                cout << "Gecersiz hedef!" << endl;
+                continue;
+            }
+
+            Karakter* hedef = dusmanlar[hedefIndex - 1];
+
+            if (secim == 1) {
+                oyuncu.saldir(*hedef);
+            }
+            else if (secim == 2) {
+                oyuncu.ozelSaldiri(*hedef);
+            }
+            else {
+                cout << "Gecersiz secim!" << endl;
+                continue;
+            }
+
+            // Dusmanlar saldirir
+            for (auto dusman : dusmanlar) {
+                if (dusman->getCan() > 0) {
+                    dusman->saldir(oyuncu);
+                }
+            }
+
+            // Olen dusmanlari kaldir
+            dusmanlar.erase(
+                remove_if(dusmanlar.begin(), dusmanlar.end(), [](Karakter* d) {
+                    if (d->getCan() <= 0) {
+                        delete d;
+                        return true;
+                    }
+                    return false;
+                    }),
+                dusmanlar.end()
+            );
+
+            if (oyuncu.getCan() <= 0) {
+                cout << "Kaybettiniz!" << endl;
+                return;
+            }
+        }
+
+        cout << "Tebrikler! Tum dusmanlari yendiniz!" << endl;
+    }
+};
+
+// Ana Fonksiyon
+int main() {
+    srand(static_cast<unsigned>(time(0))); // Random hasarlar icin seed
+    Oyun oyun;
+    oyun.baslat();
+    return 0;
+}
